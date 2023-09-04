@@ -1,0 +1,37 @@
+1. SELECT * FROM `employees`;
+
+2. SELECT COUNT(job_title) AS jml_manager 
+   FROM employees 
+   WHERE job_title = "Manager";
+
+3. SELECT name, salary 
+   FROM `employees` 
+   WHERE department = "Sales" OR department = "Marketing";
+
+4. SELECT AVG(salary) AS rata_rata_gaji 
+   FROM employees 
+   WHERE YEAR(joined_date) >= YEAR(CURRENT_DATE);
+
+5. SELECT e.name, SUM(s.sales) AS sales 
+   FROM employees e JOIN sales s ON e.id = s.employee_id 
+   GROUP BY e.name 
+   ORDER BY sales DESC 
+   LIMIT 5;
+
+6. SELECT e.name, e.salary, d.rata_rata_gaji
+   FROM employees e
+   JOIN (
+       SELECT department, AVG(salary) AS rata_rata_gaji FROM employees  
+       GROUP BY department
+   ) d
+   ON e.department = d.department 
+   WHERE e.salary > d.rata_rata_gaji
+   ORDER BY e.salary DESC;
+
+7. SELECT e.name, SUM(s.sales) AS total_penjualan, RANK() OVER (ORDER BY total_penjualan DESC) AS ranking
+   FROM employees e
+   JOIN sales s ON e.id = s.employee_id
+   GROUP BY e.name
+   ORDER BY total_penjualan DESC;
+
+8. 
