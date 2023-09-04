@@ -2,61 +2,58 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Support\Facades\Validator;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api', ['except' => 'login']);
+    }
+    
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
+        $validator = Validator::make($request->all(), [
+            'email'     => 'required',
+            'password'  => 'required'
         ]);
-        // $credentials = $request->only('email');
-
-        $user = User::where('email',$request->email)->first();
-
-        if (!$user) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data Not Found!',
-            ], 400);
+        
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
         }
         
-        // Get the token
-        $token = auth()->login($user);
-
+        $credentials = $request->only('email', 'password');
         
-        // $token = Auth::attempt($credentials);
-        if (!$token) {
+        if(!$token = auth()->guard('api')->attempt($credentials)) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized',
+                'success' => false,
+                'message' => 'Email atau Password Anda salah'
             ], 401);
         }
-
-        $userApi = Auth::user();
+        
         return response()->json([
-                'code'   => 200,
-                'status' => 'success',
-                'user'   => $userApi,
-                'authorisation' => [
-                    'token' => $token,
-                    'type' => 'bearer',
-                ]
-            ], 200);
+            'success' => true,
+            'user'    => auth()->guard('api')->user(),    
+            'token'   => $token   
+        ], 200);
     }
-
+    
     public function logout()
     {
-        Auth::logout();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Successfully logged out',
-        ]);
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json([
+                'success' => 1,
+                'message' => 'Logout Berhasil!',  
+            ]);
+            
+        } catch (\Throwable $th) {
+            return response()->json([
+                "success" => 0,
+                'message' => 'Terjadi kesalahan: ' . $th->getMessage()
+            ], 500);
+        }       
     }
-
 }
